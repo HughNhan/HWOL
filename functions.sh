@@ -156,3 +156,15 @@ hn_exit() {
     exit
 }
 
+function prompt_continue {
+    printf 'Continue next step (y/n)? '
+    read answer
+    if [ "$answer" != "${answer#[Yy]}" ] ;then 
+        echo Yes
+    else
+        echo No
+        exit 1
+    fi
+
+}
+

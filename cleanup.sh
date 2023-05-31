@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+#set -euo pipefail
 source ./setting.env
 source ./functions.sh
 
@@ -10,7 +10,8 @@ if [ -z "${WORKER_LIST}" ]; then
     export MCP=master   
 fi
 
-if oc get SriovNetwork net-attach-def -n openshift-sriov-network-operator 2>/dev/null; then
+MSG=$(oc get networkattachmentdefinition.k8s.cni.cncf.io 2>&1 | grep "No")
+if [ -z "${MSG}" ] ; then
     echo "remove SriovNetwork ..."
     oc delete -f ${MANIFEST_DIR}/net-attach-def.yaml
     echo "remove SriovNetwork: done"
@@ -18,12 +19,14 @@ else
     echo "No SriovNetwork to remove"
 
 fi
+prompt_continue
 
 
 # step 2 - apply
-set -uo pipefail
+#set -uo pipefail
 
-if oc get SriovNetworkNodePolicy sriov-node-policy -n openshift-sriov-network-operator 2>/dev/null; then
+oc get SriovNetworkNodePolicy sriov-node-policy -n openshift-sriov-network-operator  2>/dev/null
+if [ $? -eq 0 ]; then
     echo "remove SriovNetworkNodePolicy ..."
     oc delete -f ${MANIFEST_DIR}/sriov-node-policy.yaml
     echo "remove SriovNetworkNodePolicy: done"
@@ -31,12 +34,13 @@ else
     echo "No SriovNetworkNodePolicy to remove"
 fi
 
-# step 3 - delete
+prompt_continue
 
+# step 3 - delete
 function rm_SriovNetworkPoolConfig {
-#if oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator  2>/dev/null; then
-# This command does not return exit 1 when SriovNetworkPoolConfig not exists
-if [ -f ${MANIFEST_DIR}/sriov-pool-config.yaml ]; then
+
+MSG=$(oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator 2>&1 | grep "No")
+if [ -z "${MSG}" ] ; then
     echo "remove SriovNetworkPoolConfig ..."
     oc delete -f ${MANIFEST_DIR}/sriov-pool-config.yaml
     wait_mcp
@@ -49,6 +53,9 @@ fi
 }
 
 rm_SriovNetworkPoolConfig
+
+exit
+
 
 # step 2 - remove label from nodes
 if [ ! -z "${WORKER_LIST}" ]; then
