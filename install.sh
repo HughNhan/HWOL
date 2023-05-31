@@ -6,23 +6,39 @@ source ./functions.sh
 
 parse_args $@
 
+
+function prompt_continue {
+    printf 'Continue next step (y/n)? '
+    read answer
+    if [ "$answer" != "${answer#[Yy]}" ] ;then 
+        echo Yes
+    else
+        echo No
+        exit 1
+    fi
+
+}
+
 mkdir -p ${MANIFEST_DIR}/
 
 # if no worker i.e SNO, compact cluster, use master mcp
 if [ ! -z "$WORKERS"  ]; then
     export MCP=master   
-    echo Use mcp $MCP WORKER_LIST=$WORKER_LIST
+    echo Use mcp $MCP 
 fi
 
 export OCP_CHANNEL=$(get_ocp_channel)
 
 function install_sriov_operator {
+    # Debug: oc get csv -n openshift-sriov-network-operator -o custom-columns=Name:.metadata.name,Phase:.status.phase
+    #        oc get network.operator -o yaml | grep routing
+    #        ( look for =>  routingViaHost: false )
 
 # install SRIOV operator
 # skip if sriov operator subscription already exists 
 if ! oc get Subscription sriov-network-operator-subsription -n openshift-sriov-network-operator 2>/dev/null; then 
     #// Installing SR-IOV Network Operator done
-    echo "Installing SRIOV Opeerato ..."
+    echo "Installing SRIOV Operator ..."
     export OCP_CHANNEL=$(get_ocp_channel)
     envsubst < templates/sub-sriov.yaml.template > ${MANIFEST_DIR}/sub-sriov.yaml
     oc create -f ${MANIFEST_DIR}/sub-sriov.yaml
@@ -37,52 +53,53 @@ wait_pod_in_namespace openshift-sriov-network-operator
 sleep 10
 }
 
+install_sriov_operator
+prompt_continue
+
 function configure_mcp {
 ### Configure MCP
 
 # step 1 - Create mcp-offloading mcp
     # create template
-if ! oc get mcp mcp-offloading  2>/dev/null; then
+ if ! oc get mcp mcp-offloading  2>/dev/null; then
     echo "create mcp for mcp-offloading  ..."
     mkdir -p ${MANIFEST_DIR}
     envsubst < templates/mcp-offloading.yaml.template > ${MANIFEST_DIR}/mcp-offloading.yaml
     oc create -f ${MANIFEST_DIR}/mcp-offloading.yaml
     echo "create mcp for mcp-offloading: done"
-fi
-
+ fi
 }
 
 # Create a new MCP, but if cluster is SNO or compact we only have masters, and hence use master MCP.
 if [ ! -z "${WORKER_LIST}" ]; then
     configure_mcp
 else
-    # Use mcp "master"
-    oc label --overwrite mcp master machineconfiguration.openshift.io/role=master
+    echo "Cluster has no workers. Will use master mcp"
 fi
 
 function add_label {
-# step 2 - label nodes
-if [ ! -z ${WORKER_LIST} ]; then
+ # step 2 - label nodes
+ if [ ! -z ${WORKER_LIST} ]; then
     for NODE in $WORKER_LIST; do
         echo label $NODE with $MCP
         echo oc label --overwrite node ${NODE} node-role.kubernetes.io/${MCP}=""
     done
-else
-    for NODE in $MASTER_LIST; do
-        echo label $NODE with $MCP
-        echo oc label --overwrite node ${NODE} node-role.kubernetes.io/${MCP}=""
-    done
-fi
+ else
+    echo "Cluster has no workers. No need to label master nodes"
+ fi
 }
 
-#add_label
-#hn_exit
+add_label
+
+prompt_continue
 
 # step 3 - (optional ) oc get node 
 
 function add_SriovNetworkPoolConfig {
-# step 4 - add mcp to SriovNetworkPoolConfig custom resource.
-#if ! oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator  2>/dev/null; then
+ # step 4 - add mcp to SriovNetworkPoolConfig custom resource.
+ #if ! oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator  2>/dev/null; then
+ # This command does not return exit 1 when SriovNetworkPoolConfig not exists
+ if [ ! -f ${MANIFEST_DIR}/sriov-pool-config.yaml ]; then
     echo "create SriovNetworkPoolConfig  ..."
     # create sriov-pool-config.yaml from template
     envsubst < templates/sriov-pool-config.yaml.template > ${MANIFEST_DIR}/sriov-pool-config.yaml
@@ -90,10 +107,12 @@ function add_SriovNetworkPoolConfig {
     oc create -f ${MANIFEST_DIR}/sriov-pool-config.yaml
     echo "create SriovNetworkPoolConfig: done"
     wait_mcp
-#fi
+ else
+    echo ${MANIFEST_DIR}/sriov-pool-config.yam exists. No need to create SriovNetworkPoolConfig
+ fi
 }
 add_SriovNetworkPoolConfig
-hn_exit
+prompt_continue
 
 function config_SriovNetworkNodePolicy {
 ##### Configuring the SR-IOV network node policy
@@ -116,6 +135,9 @@ if ! oc get SriovNetworkNodePolicy sriov-node-policy -n openshift-sriov-network-
 fi
 
 }
+
+prompt_continue
+hn_exit
 
 
 function create_networl_attachment {
