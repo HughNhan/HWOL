@@ -44,6 +44,7 @@ if [ -z "${MSG}" ] ; then
     echo "remove SriovNetworkPoolConfig ..."
     oc delete -f ${MANIFEST_DIR}/sriov-pool-config.yaml
     wait_mcp
+    # !!!! reboot !!!!
     rm ${MANIFEST_DIR}/sriov-pool-config.yaml 
     echo "remove SriovNetworkPoolConfig: done"
 else
@@ -53,9 +54,10 @@ fi
 }
 
 rm_SriovNetworkPoolConfig
+#!!!! reboot !!!!
 
-exit
-
+echo "Continue if you want to also remove the mcp-offload mcp  ..."
+prompt_continue
 
 # step 2 - remove label from nodes
 if [ ! -z "${WORKER_LIST}" ]; then
@@ -70,10 +72,24 @@ else
     done
 fi
 
-if oc get mcp mcp-offloading -n openshift-sriov-network-operator  2>/dev/null; then
+prompt_continue
+
+oc get mcp mcp-offloading -n openshift-sriov-network-operator 2>/dev/null
+if [ $? -eq 0 ]; then
     echo "remove mcp for mcp-offloading  ..."
     oc delete -f ${MANIFEST_DIR}/mcp-offloading.yaml
+    rm  -f ${MANIFEST_DIR}/mcp-offloading.yaml
     echo "delete mcp for mcp-offloading: done"
+fi
+
+echo "Continue if you want to also remove the SRIOV Operator ..."
+prompt_continue
+
+oc get Subscription sriov-network-operator-subsription -n openshift-sriov-network-operator
+if [ $? -eq 0 ]; then
+    echo "Remove  SRIOV Operator ..."
+    oc delete -f ${MANIFEST_DIR}/sub-sriov.yaml
+    rm ${MANIFEST_DIR}/sub-sriov.yaml
 fi
 
 
