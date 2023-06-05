@@ -10,13 +10,12 @@ if [ -z "${WORKER_LIST}" ]; then
     export MCP=master   
 fi
 
-MSG=$(oc get networkattachmentdefinition.k8s.cni.cncf.io 2>&1 | grep "No")
-if [ -z "${MSG}" ] ; then
-    echo "remove SriovNetwork ..."
+if oc get networkattachmentdefinition.k8s.cni.cncf.io/$NET_ATTACH_NS &>/dev/null; then
+    echo "remove NetworkAttachmentDefinition ..."
     oc delete -f ${MANIFEST_DIR}/net-attach-def.yaml
-    echo "remove SriovNetwork: done"
+    echo "remove NetworkAttachmentDefinition: done"
 else
-    echo "No SriovNetwork to remove"
+    echo "No NetworkAttachmentDefinition to remove"
 
 fi
 prompt_continue
@@ -25,22 +24,25 @@ prompt_continue
 # step 2 - apply
 #set -uo pipefail
 
-oc get SriovNetworkNodePolicy sriov-node-policy -n openshift-sriov-network-operator  2>/dev/null
-if [ $? -eq 0 ]; then
+if oc get SriovNetworkNodePolicy sriov-node-policy -n openshift-sriov-network-operator  &>/dev/null; then
     echo "remove SriovNetworkNodePolicy ..."
     oc delete -f ${MANIFEST_DIR}/sriov-node-policy.yaml
     echo "remove SriovNetworkNodePolicy: done"
+    wait_mcp
+    # !!!! reboot !!!!
+
 else
     echo "No SriovNetworkNodePolicy to remove"
 fi
 
+echo "Will remove SriovNetworkPoolConfig, and reboot if continue"
 prompt_continue
+exit
 
 # step 3 - delete
 function rm_SriovNetworkPoolConfig {
 
-MSG=$(oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator 2>&1 | grep "No")
-if [ -z "${MSG}" ] ; then
+if oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator &>/dev/null); then
     echo "remove SriovNetworkPoolConfig ..."
     oc delete -f ${MANIFEST_DIR}/sriov-pool-config.yaml
     wait_mcp
@@ -72,21 +74,19 @@ else
     done
 fi
 
-prompt_continue
-
-oc get mcp mcp-offloading -n openshift-sriov-network-operator 2>/dev/null
-if [ $? -eq 0 ]; then
+if oc get mcp mcp-offloading -n openshift-sriov-network-operator &>/dev/null
     echo "remove mcp for mcp-offloading  ..."
     oc delete -f ${MANIFEST_DIR}/mcp-offloading.yaml
     rm  -f ${MANIFEST_DIR}/mcp-offloading.yaml
     echo "delete mcp for mcp-offloading: done"
+else
+    echo "No mcp mcp-offloading to remove."
 fi
 
 echo "Continue if you want to also remove the SRIOV Operator ..."
 prompt_continue
 
-oc get Subscription sriov-network-operator-subsription -n openshift-sriov-network-operator
-if [ $? -eq 0 ]; then
+if oc get Subscription sriov-network-operator-subsription -n openshift-sriov-network-operator &>/dev/null; then
     echo "Remove  SRIOV Operator ..."
     oc delete -f ${MANIFEST_DIR}/sub-sriov.yaml
     rm ${MANIFEST_DIR}/sub-sriov.yaml

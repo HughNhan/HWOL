@@ -28,7 +28,9 @@ function install_sriov_operator {
 
     # install SRIOV operator
     # skip if sriov operator subscription already exists 
-    if ! oc get Subscription sriov-network-operator-subsription -n openshift-sriov-network-operator 2>/dev/null; then 
+    if oc get Subscription sriov-network-operator-subsription -n openshift-sriov-network-operator &>/dev/null; then 
+        echo "SRIOV Operator already installed: done"
+    else
         #// Installing SR-IOV Network Operator done
         echo "Installing SRIOV Operator ..."
         export OCP_CHANNEL=$(get_ocp_channel)
@@ -38,8 +40,6 @@ function install_sriov_operator {
         wait_pod_in_namespace openshift-sriov-network-operator
         # give it a little delay. W/o delay we could encounter error on the next command.
         sleep 10
-    else
-        echo "SRIOV Operator already installed: done"
     fi
 }
 
@@ -49,7 +49,9 @@ prompt_continue
 # step 2 - Create mcp-offloading mcp
 
 function configure_mcp {
-    if ! oc get mcp mcp-offloading  2>/dev/null; then
+    if oc get mcp mcp-offloading  &>/dev/null; then
+        echo "mcp mcp-offloading exists. No need to create new"
+    else
         echo "create mcp for mcp-offloading  ..."
         mkdir -p ${MANIFEST_DIR}
         envsubst < templates/mcp-offloading.yaml.template > ${MANIFEST_DIR}/mcp-offloading.yaml
@@ -86,8 +88,9 @@ prompt_continue
 #           !!! Node reboot !!!!
 
 function add_SriovNetworkPoolConfig {
-    MSG=$(oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator 2>&1 | grep "No")
-    if [ ! -z "${MSG}" ] ; then
+    if oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator &>/dev/null; then
+        echo SriovNetworkPoolConfig exists. No need to create SriovNetworkPoolConfig
+    else
         echo "create SriovNetworkPoolConfig  ..."
         # create sriov-pool-config.yaml from template
         envsubst < templates/sriov-pool-config.yaml.template > ${MANIFEST_DIR}/sriov-pool-config.yaml
@@ -95,8 +98,6 @@ function add_SriovNetworkPoolConfig {
         echo "create SriovNetworkPoolConfig: done"
         wait_mcp
         # !!!!! node reboot !!!!
-    else
-        echo SriovNetworkPoolConfig exists. No need to create SriovNetworkPoolConfig
     fi
 }
 add_SriovNetworkPoolConfig
@@ -117,33 +118,37 @@ function config_SriovNetworkNodePolicy {
     # step 2 - apply
     oc label --overwrite node ${WORKER_LIST} feature.node.kubernetes.io/network-sriov.capable=true
 
-    oc get SriovNetworkNodePolicy sriov-node-policy -n openshift-sriov-network-operator  2>/dev/null
-    if [ $? -ne 0 ]; then
+    if oc get SriovNetworkNodePolicy sriov-node-policy -n openshift-sriov-network-operator  2>/dev/null; then
+        echo "SriovNetworkNodePolicy exists. Skip creation"
+    else
         echo "create SriovNetworkNodePolicy ..."
         oc create -f ${MANIFEST_DIR}/sriov-node-policy.yaml
         echo "create SriovNetworkNodePolicy: done"
+        wait_mcp
+        # !!!!! node reboot !!!!
     fi
 }
 config_SriovNetworkNodePolicy
+# !!! reboot
 prompt_continue
 
 
 #### Creating a network attachment definition
 
-function create_networl_attachment {
-    # debug:  oc get networkattachmentdefinition.k8s.cni.cncf.io/net-attach-def
+function create_network_attachment {
+    # debug:  oc get networkattachmentdefinition.k8s.cni.cncf.io/$NET_ATTACH_NAME
     envsubst < templates//net-attach-def.yaml.template > ${MANIFEST_DIR}/net-attach-def.yaml
     echo "generating ${MANIFEST_DIR}/net-attach-def.yaml: done"
-    MSG=$(oc get networkattachmentdefinition.k8s.cni.cncf.io 2>&1 | grep "No")
-    if [ ! -z "${MSG}" ] ; then
-        # this CLI correctly exit 0 (for exist ) 1 (non-exist)
-        echo "create SriovNetwork ..."
+    if oc get networkattachmentdefinition.k8s.cni.cncf.io/$NET_ATTACH_NAME  &>/dev/null; then
+        echo "NetworkAttachmentDefinition exists. Skip creation"
+    else
+        echo "create NetworkAttachmentDefinition ..."
         oc create -f ${MANIFEST_DIR}/net-attach-def.yaml
         echo "create SriovNetwork net-attach-def: done"
     fi
 }
 
-create_networl_attachment
+create_network_attachment
 
 
 #
