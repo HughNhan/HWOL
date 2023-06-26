@@ -79,10 +79,20 @@ function add_label {
         echo "Cluster has no workers. No need to label master nodes"
     fi
 }
-
 add_label
 prompt_continue
 
+# add this if necessary
+function add_mc_realloc {
+    if  oc get mc 99-pci-realloc-workers &>/dev/null ; then
+        echo mc pci-realloc exists. No need to create this mc
+    else
+        echo "create mc mc-realloc.yaml ..."
+        envsubst < templates/mc-realloc.yaml.template > ${MANIFEST_DIR}/mc-realloc.yaml.template
+        oc create -f ${MANIFEST_DIR}/mc-realloc.yaml
+        echo "create mc-realloc.yaml.template: done"
+    fi
+}
 
 # step 4 - create SriovNetworkPoolConfig CR. Purpose: add the mcp-offload MCP to SriovNetworkPoolConfig
 #           !!! Node reboot !!!!
