@@ -1,0 +1,37 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "name": "1-server-w2",
+    "namespace": "default"
+  },
+  "spec": {
+    "restartPolicy": "Never",
+    "nodeSelector": {
+      "kubernetes.io/hostname": "worker-2"
+    },
+    "containers": [
+      {
+        "args": [
+            "uperf -s -P 32000"
+        ],
+        "command": [
+            "/bin/sh",
+            "-c"
+        ],
+        "name": "1-server",
+        "image": "quay.io/hnhan/ocp-tools:uperf",
+        "imagePullPolicy": "Always",
+        "securityContext": {
+           "privileged": true
+        },
+        "env": [
+          {
+            "name": "cpu_partitioning",
+            "value": "0"
+          }
+        ]
+      }
+    ]
+  }
+}

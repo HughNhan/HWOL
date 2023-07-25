@@ -44,20 +44,19 @@ function install_sriov_operator {
 }
 
 install_sriov_operator
-echo "next is creating mcp-offloading mcp"
 prompt_continue
 
-# step 2 - Create mcp-offloading mcp
+# step 2 - Create mcp-offloading-32vf mcp
 
 function configure_mcp {
-    if oc get mcp mcp-offloading  &>/dev/null; then
-        echo "mcp mcp-offloading exists. No need to create new"
+    if oc get mcp mcp-offloading-32vf  &>/dev/null; then
+        echo "mcp mcp-offloading-32vf exists. No need to create new"
     else
-        echo "create mcp for mcp-offloading  ..."
+        echo "create mcp for mcp-offloading-32vf  ..."
         mkdir -p ${MANIFEST_DIR}
-        envsubst < templates/mcp-offloading.yaml.template > ${MANIFEST_DIR}/mcp-offloading.yaml
-        oc create -f ${MANIFEST_DIR}/mcp-offloading.yaml
-        echo "create mcp for mcp-offloading: done"
+        envsubst < templates/mcp-offloading-32vf.yaml.template > ${MANIFEST_DIR}/mcp-offloading-32vf.yaml
+        oc create -f ${MANIFEST_DIR}/mcp-offloading-32vf.yaml
+        echo "create mcp for mcp-offloading-32vf: done"
     fi
 }
 
@@ -81,7 +80,6 @@ function add_label {
     fi
 }
 add_label
-echo "next is add_mc_realloc"
 prompt_continue
 
 # add this if necessary
@@ -92,33 +90,27 @@ function add_mc_realloc {
         echo "create mc mc-realloc.yaml ..."
         envsubst < templates/mc-realloc.yaml.template > ${MANIFEST_DIR}/mc-realloc.yaml
         oc create -f ${MANIFEST_DIR}/mc-realloc.yaml
-        echo "create mc-realloc.yaml: done"
+        echo "create mc-realloc.yaml.template: done"
     fi
 }
 
-add_mc_realloc
-echo "next is add_SriovNetworkPoolConfig"
-prompt_continue
-
-
-# step 4 - create SriovNetworkPoolConfig CR. Purpose: add the mcp-offload MCP to SriovNetworkPoolConfig
+# step 4 - create SriovNetworkPoolConfig CR. Purpose: add the mcp-offload-32vf MCP to SriovNetworkPoolConfig
 #           !!! Node reboot !!!!
 
 function add_SriovNetworkPoolConfig {
-    if oc get SriovNetworkPoolConfig/sriovnetworkpoolconfig-offload -n openshift-sriov-network-operator &>/dev/null; then
-        echo SriovNetworkPoolConfig exists. No need to create SriovNetworkPoolConfig
+    if oc get SriovNetworkPoolConfig/sriovnetworkpoolconfig-offload-32vf  -n openshift-sriov-network-operator &>/dev/null; then
+        echo SriovNetworkPoolConfig-32vf exists. No need to create SriovNetworkPoolConfig-vf
     else
-        echo "create SriovNetworkPoolConfig  ..."
-        # create sriov-pool-config.yaml from template
-        envsubst < templates/sriov-pool-config.yaml.template > ${MANIFEST_DIR}/sriov-pool-config.yaml
-        oc create -f ${MANIFEST_DIR}/sriov-pool-config.yaml
-        echo "create SriovNetworkPoolConfig: done"
+        echo "create SriovNetworkPoolConfig-32vf  ..."
+        # create sriov-pool-config-32vf.yaml from template
+        envsubst < templates/sriov-pool-config-32vf.yaml.template > ${MANIFEST_DIR}/sriov-pool-config-32vf.yaml
+        oc create -f ${MANIFEST_DIR}/sriov-pool-config-32vf.yaml
+        echo "create SriovNetworkPoolConfig-32vf: done"
         wait_mcp
         # !!!!! node reboot !!!!
     fi
 }
 add_SriovNetworkPoolConfig
-echo "next is config_SriovNetworkNodePolicy"
 prompt_continue
 
 # step 5  - SiovNetworkNodePolicy. Tell it what SRIOV devices (mlx, 710 etc) to be activated.
@@ -131,24 +123,23 @@ function config_SriovNetworkNodePolicy {
 
     # step 1 - create sriov-node-policy.yaml from template
     # 
-    envsubst < templates/sriov-node-policy.yaml.template > ${MANIFEST_DIR}/sriov-node-policy.yaml
-    echo "generating ${MANIFEST_DIR}/sriov-node-policy.yaml: done"
+    envsubst < templates/sriov-node-policy-32vf.yaml.template > ${MANIFEST_DIR}/sriov-node-policy-32vf.yaml
+    echo "generating ${MANIFEST_DIR}/sriov-node-policy-32vf.yaml: done"
     # step 2 - apply
-    oc label --overwrite node ${WORKER_LIST} feature.node.kubernetes.io/network-sriov.capable=true
+    oc label --overwrite node ${WORKER_LIST} feature.node.kubernetes.io/network-sriov-32vf.capable=true
 
-    if oc get SriovNetworkNodePolicy sriov-node-policy -n openshift-sriov-network-operator  2>/dev/null; then
-        echo "SriovNetworkNodePolicy exists. Skip creation"
+    if oc get SriovNetworkNodePolicy/sriov-node-policy-32vf -n openshift-sriov-network-operator  2>/dev/null; then
+        echo "SriovNetworkNodePolicy-32vf exists. Skip creation"
     else
-        echo "create SriovNetworkNodePolicy ..."
-        oc create -f ${MANIFEST_DIR}/sriov-node-policy.yaml
-        echo "create SriovNetworkNodePolicy: done"
+        echo "create SriovNetworkNodePolicy-32vf ..."
+        oc create -f ${MANIFEST_DIR}/sriov-node-policy-32vf.yaml
+        echo "create SriovNetworkNodePolicy-32vf: done"
         wait_mcp
         # !!!!! node reboot !!!!
     fi
 }
 config_SriovNetworkNodePolicy
 # !!! reboot
-echo "next is create_network_attachment"
 prompt_continue
 
 
@@ -156,7 +147,7 @@ prompt_continue
 
 function create_network_attachment {
     # debug:  oc get networkattachmentdefinition.k8s.cni.cncf.io/$NET_ATTACH_NAME
-    envsubst < templates//net-attach-def.yaml.template > ${MANIFEST_DIR}/net-attach-def.yaml
+    envsubst < templates/net-attach-def.yaml.template > ${MANIFEST_DIR}/net-attach-def.yaml
     echo "generating ${MANIFEST_DIR}/net-attach-def.yaml: done"
     if oc get networkattachmentdefinition.k8s.cni.cncf.io/$NET_ATTACH_NAME  &>/dev/null; then
         echo "NetworkAttachmentDefinition exists. Skip creation"
@@ -167,7 +158,8 @@ function create_network_attachment {
     fi
 }
 
-create_network_attachment
+# 32VF - does not create_network_attachment
+# create_network_attachment
 
 
 #

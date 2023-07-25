@@ -1,0 +1,12 @@
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfigPool
+metadata:
+  name: mcp-offloading-32vf
+spec:
+  machineConfigSelector:
+    matchExpressions:
+      - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker,mcp-offloading-32vf]} 
+  nodeSelector:
+    matchLabels:
+      node-role.kubernetes.io/$MCP: "" 

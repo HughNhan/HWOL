@@ -1,0 +1,4 @@
+....
+metadata:
+  annotations:
+    v1.multus-cni.io/default-network: net-attach-def/net-attach-def 
