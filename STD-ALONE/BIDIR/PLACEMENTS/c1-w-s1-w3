@@ -1,0 +1,6 @@
+HWOL_CLIENTS=(1-client-w0.json)
+HWOL_SERVERS=(1-server-w3)
+
+NO_CLIENTS=(1-client-w1.json)
+NO_SERVERS=(1-server-w3)
+

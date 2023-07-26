@@ -2,7 +2,7 @@
   "apiVersion": "v1",
   "kind": "Pod",
   "metadata": {
-    "name": "2-client-w1",
+    "name": "1-client-w1",
     "namespace": "default"
   },
   "spec": {

@@ -13,7 +13,7 @@
     "containers": [
       {
         "args": [
-           "nthreads=${NTHREADS} duration=${DURATION} protocol=tcp port=$DATPORT remotehost=${SERVER_IP} wsize=${WSIZE} rsize=${RSIZE} uperf -R -m /usr/workloads/xml-files/stream.xml -P $PORT $OPTS"
+           "nthreads=${NTHREADS} duration=${DURATION} protocol=tcp port=$DATAPORT remotehost=${SERVER_IP} wsize=${WSIZE} rsize=${RSIZE} uperf -R -m /usr/workloads/xml-files/stream.xml -P $PORT $OPTS"
         ],
         "command": [
              "/bin/sh",

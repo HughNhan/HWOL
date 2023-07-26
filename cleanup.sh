@@ -37,21 +37,21 @@ fi
 
 echo "Will remove SriovNetworkPoolConfig, and reboot if continue"
 prompt_continue
-exit
 
 # step 3 - delete
 function rm_SriovNetworkPoolConfig {
 
-if oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator &>/dev/null); then
+ if oc get SriovNetworkPoolConfig -n openshift-sriov-network-operator &>/dev/null; then
     echo "remove SriovNetworkPoolConfig ..."
     oc delete -f ${MANIFEST_DIR}/sriov-pool-config.yaml
     wait_mcp
+
     # !!!! reboot !!!!
     rm ${MANIFEST_DIR}/sriov-pool-config.yaml 
     echo "remove SriovNetworkPoolConfig: done"
-else
+ else
     echo "No SriovNetworkPoolConfig to remove"
-fi
+ fi
 
 }
 
@@ -60,6 +60,8 @@ rm_SriovNetworkPoolConfig
 
 echo "Continue if you want to also remove the mcp-offload mcp  ..."
 prompt_continue
+
+exit
 
 # step 2 - remove label from nodes
 if [ ! -z "${WORKER_LIST}" ]; then

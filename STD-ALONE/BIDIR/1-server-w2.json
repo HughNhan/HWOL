@@ -3,7 +3,10 @@
   "kind": "Pod",
   "metadata": {
     "name": "1-server-w2",
-    "namespace": "default"
+    "namespace": "default",
+    "annotations": {
+      "v1.multus-cni.io/default-network": "default/default"
+    }
   },
   "spec": {
     "restartPolicy": "Never",
@@ -12,6 +15,15 @@
     },
     "containers": [
       {
+        "resources": {
+            "requests": {
+                "openshift.io/mlxnics": "1"
+            },
+            "limits": {
+                "openshift.io/mlxnics": "1"
+            }
+        },
+
         "args": [
             "uperf -s -P 32000"
         ],

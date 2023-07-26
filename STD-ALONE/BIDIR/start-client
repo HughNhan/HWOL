@@ -1,32 +1,40 @@
 #!/bin/bash
+#
+# Usage: can be run directly or under this-run
+#     1.   SAMPLES=6 NTHREADS=16 DURATION=30 WSIZE=32000 PLACEMENT=$PLACEMENT ./start-client --hwol
+#     2.   this-run --label <label>  <=== see run.sh
+#
 
 set -o pipefail
 
 export DURATION=${DURATION:-60}
 export WSIZE=${WSIZE:-32000}
-export RSIZE=${WSIZE:-512}
+export RSIZE=${RSIZE:-512}
 export NTHREADS=${NTHREADS:-16}
 export OPTS=" -a -p"
+export SAMPLES=${SAMPLES:-1}
 
-HWOL_SERVERS=(1-server-w0 2-server-w4)
-HWOL_CLIENTS=(1-client-w3.json 2-client-w0.json)
+me_debug=0
+function debug {
+    if [ $me_debug == 1 ]; then
+       echo $@
+    fi
+}
 
-# normal
-NO_SERVERS=(1-server-w1 2-server-w4)
-NO_CLIENTS=(1-client-w3.json 2-client-w1.json)
 
-# spec1: from normal swap driver placement
-#NO_SERVERS=(1-server-w1 2-server-w3)
-#NO_CLIENTS=(1-client-w4.json 2-client-w1.json)
-
-#From nornal: change start order
-#NO_SERVERS=(2-server-w4 1-server-w1)
-#NO_CLIENTS=(2-client-w1.json 1-client-w3.json)
-
-# 1 pair
-#NO_SERVERS=(1-server-w1)
-#NO_CLIENTS=(1-client-w3.json)
-
+# We can run this sript directly, or we can run it with a wrapper like "this-run -> run.sh"
+# the wrapper can choose PLACEMENT.
+if [ -z "${PLACEMENT}" ]; then
+   # source default PLACEMENT.
+   debug source ./placement
+   source ./placement
+else
+   # source PLACEMENT per input  arg
+   debug source $PLACEMENT
+   source $PLACEMENT
+fi
+debug HWOL=$HWOL_SERVERS $HWOL_CLIENTS
+debug NO=  $NO_SERVERS $NO_CLIENTS
 
 HWOL=false
 CLEAN=false
@@ -86,6 +94,7 @@ function run-pair {
     # grep "uperf -s -P 30000" to get the port numer, number after -P
     export PORT=$(grep -e "perf" $2.json |  grep -oP '(?<=-P )[^"]*')
     export DATAPORT=$((PORT+1))
+    debug PORT=$PORT DATAPORT=$DATAPORT
 
     export SERVER_IP=$(oc get pod --no-headers  $2 -o wide | awk -F " " '{print $6}')
     envsubst < $1.template > $1
@@ -193,14 +202,19 @@ function  get_results {
         done
     fi
 }
-echo mode=$mode, DURATION=${DURATION}, NTHREADS=${NTHREADS}, WSIZE=${WSIZE}, RSIZE=${WSIZE}
+echo mode=$mode, DURATION=${DURATION}, NTHREADS=${NTHREADS}, WSIZE=${WSIZE}, RSIZE=${RSIZE}
 
-#run-servers
-#run-all
-run-servers
-run-clients
-sleep 10
-wait-run-complete
-get_results
+for i in $(seq $SAMPLES); do
+   run_state=1
+   echo "<<<<<<" sample-$i ">>>>>>>"
+   run-servers
+   run-clients
+   sleep 10
+   wait-run-complete
+   get_results
+done
+
+echo "Benchmark summary is complete"
+
 
 # EOF
