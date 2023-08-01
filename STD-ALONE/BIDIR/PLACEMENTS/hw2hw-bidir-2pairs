@@ -1,5 +1,5 @@
-export HWOL_SERVERS=(1-server-w0 2-server-w2)
-export HWOL_CLIENTS=(1-client-w2.json 2-client-w0.json)
+export HWOL_SERVERS=(1-server-w0 2-server-w4)
+export HWOL_CLIENTS=(1-client-w4.json 2-client-w0.json)
 
 # normal
 export NO_SERVERS=(1-server-w1 2-server-w3)

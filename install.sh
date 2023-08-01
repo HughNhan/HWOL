@@ -71,7 +71,7 @@ fi
 # step 3 - label nodes that needs SRIOV
 
 function add_label {
-    if [ ! -z ${WORKER_LIST} ]; then
+    if [ ! -z $WORKER_LIS} ]; then
         for NODE in $WORKER_LIST; do
             echo label $NODE with $MCP
             oc label --overwrite node ${NODE} node-role.kubernetes.io/${MCP}=""
@@ -126,7 +126,9 @@ prompt_continue
 function config_SriovNetworkNodePolicy {
     ##### Configuring the SR-IOV network node policy
     echo "Acquiring SRIOV interface PCI info from worker node ${WORKER_LIST} ..."
-    export HWOL_INTERFACE_PCI=$(exec_over_ssh ${WORKER_LIST} "ethtool -i ${HWOL_INTERFACE}" | awk '/bus-info:/{print $NF;}')
+    WORKER_ARR=(${WORKER_LIST})
+    # assuming all worker NICs are in same PCI slot
+    export HWOL_INTERFACE_PCI=$(exec_over_ssh ${WORKER_ARR[0]} "ethtool -i ${HWOL_INTERFACE}" | awk '/bus-info:/{print $NF;}')
     echo "Acquiring SRIOV interface PCI info from worker node ${WORKER_LIST}: done"
 
     # step 1 - create sriov-node-policy.yaml from template
@@ -134,7 +136,10 @@ function config_SriovNetworkNodePolicy {
     envsubst < templates/sriov-node-policy.yaml.template > ${MANIFEST_DIR}/sriov-node-policy.yaml
     echo "generating ${MANIFEST_DIR}/sriov-node-policy.yaml: done"
     # step 2 - apply
-    oc label --overwrite node ${WORKER_LIST} feature.node.kubernetes.io/network-sriov.capable=true
+
+    for NODE in ${WORKER_LIST}; do
+        oc label --overwrite node $NODE feature.node.kubernetes.io/network-sriov.capable=true
+    done
 
     if oc get SriovNetworkNodePolicy sriov-node-policy -n openshift-sriov-network-operator  2>/dev/null; then
         echo "SriovNetworkNodePolicy exists. Skip creation"

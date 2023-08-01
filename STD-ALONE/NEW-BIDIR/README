@@ -1,0 +1,13 @@
+Calling chain: this-run -> run.sh  -> start-client
+
+I can invoke at any level with additional conveneince.
+
+1. start-client: need  manual inputs: PLACEMENT and HWOL
+   $ SAMPLES=6 NTHREADS=16 DURATION=30 WSIZE=32000 PLACEMENT=$PLACEMENT HWOL=<true/false> ./start-client  
+
+2. run.sh:      manual editing run.sh with PLACEMENT
+   $ HWOL=<true/false>  run.sh
+
+3. this-run:  
+   $ HWOL=<true/false> this-run --label <LABEL>    <==== leverage this-run to create label.log etc
+

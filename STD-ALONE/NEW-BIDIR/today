@@ -1,0 +1,16 @@
+NTHREADS=1 HWOL=true this-run --label  HWOL-s6n2d30w32k
+NTHREADS=1 HWOL=false this-run --label NO-HWOL-s6n2d30w32k
+
+NTHREADS=2 HWOL=true this-run --label  HWOL-s6n2d30w32k
+NTHREADS=2 HWOL=false this-run --label NO-HWOL-s6n2d30w32k
+
+NTHREADS=4 HWOL=true this-run --label  HWOL-s6n4d30w32k
+NTHREADS=4 HWOL=false this-run --label NO-HWOL-s6n4d30w32k
+
+NTHREADS=8 HWOL=true this-run --label  HWOL-s6n8d30w32k
+NTHREADS=8 HWOL=false this-run --label NO-HWOL-s6n8d30w32k
+
+NTHREADS=16 HWOL=true this-run --label  HWOL-s6n16d30w32k
+NTHREADS=16 HWOL=false this-run --label NO-HWOL-s6n16d30w32k
+
+

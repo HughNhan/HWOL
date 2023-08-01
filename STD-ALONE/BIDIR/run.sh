@@ -1,13 +1,11 @@
 #!/bin/bash
 
 #
-# Usage: this-run --label
-# Option: change HWO  var as needed
-
+# Usage: HWOL=<true/false> this-run --label
+# Option: change HWO var as needed
 
 PLACEMENT=./PLACEMENTS/hw2hw-bidir-2pairs 
-#HWOL="--hwol"
-HWOL=""
+export HWOL=${HWOL:-false}
 
-SAMPLES=6 NTHREADS=16 DURATION=30 WSIZE=32000 PLACEMENT=$PLACEMENT ./start-client "${HWOL}"
+SAMPLES=6 NTHREADS=12 DURATION=3000 WSIZE=32000 PLACEMENT=$PLACEMENT HWOL=$HWOL ./start-client 
 
