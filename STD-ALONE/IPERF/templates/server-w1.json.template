@@ -1,0 +1,37 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "name": "$IDX-server-w1",
+    "namespace": "default"
+  },
+  "spec": {
+    "restartPolicy": "Never",
+    "nodeSelector": {
+      "kubernetes.io/hostname": "worker-1"
+    },
+    "containers": [
+      {
+        "args": [
+            "iperf3 -s -p 31${IDX}00 --format g"
+        ],
+        "command": [
+            "/bin/sh",
+            "-c"
+        ],
+        "name": "1-server",
+        "image": "quay.io/hnhan/ocp-tools:iperf3",
+        "imagePullPolicy": "Always",
+        "securityContext": {
+           "privileged": true
+        },
+        "env": [
+          {
+            "name": "cpu_partitioning",
+            "value": "0"
+          }
+        ]
+      }
+    ]
+  }
+}

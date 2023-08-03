@@ -1,0 +1,16 @@
+git clone https://github.com/HughNhan/uperf.git /tmp/uperf
+cd /root/uperf
+ git checkout double-free
+autoreconf --install
+CFLAGS="-ggdb -DHN_BARRIER_RETRY" ./configure --disable-sctp
+make
+make install
+/usr/local/bin/uperf -V
+
+
+#####
+cp -r bench-flexran/xml-files/  workloads/
+podman build -f Dockerfile -t quay.io/hnhan/ocp-tools:uperf .
+podman push  quay.io/hnhan/ocp-tools:uperf 
+
+

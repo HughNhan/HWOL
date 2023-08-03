@@ -1,0 +1,13 @@
+git clone https://github.com/HughNhan/iperf.git /tmp/iperf
+cd /tmp/iperf
+git checkout udp-delay
+CFLAGS="-ggdb -DHN_DEBUG\" ./configure,
+ make",
+make install,
+/usr/local/bin/iperf3 -v
+
+--
+mkdir my-lib
+cp /usr/local/lib/* my-lib/
+podman build -f Dockerfile -t quay.io/hnhan/ocp-tools:iperf3 .
+podman push  quay.io/hnhan/ocp-tools:iperf3 

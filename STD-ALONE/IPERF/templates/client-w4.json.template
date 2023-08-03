@@ -1,0 +1,41 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "name": "$IDX-client-w4",
+    "namespace": "default",
+    "annotations": {
+      "v1.multus-cni.io/default-network": "default/default"
+    }
+  },
+  "spec": {
+    "restartPolicy": "Never",
+    "nodeSelector": {
+      "kubernetes.io/hostname": "worker-4"
+    },
+    "containers": [
+      {
+        "resources": {
+            "requests": {
+                "openshift.io/mlxnics": "1"
+            },
+            "limits": {
+                "openshift.io/mlxnics": "1"
+            }
+        },
+        "args": [
+            "iperf3 --format g -c ${SERVER_IP} -p $PORT $PROTO  --get-server-output -V -fm -l ${WSIZE} -i1 -t ${DURATION} $OPTS"
+        ],
+        "command": [
+             "/bin/sh",
+             "-c"
+        ],
+        "name": "2-client", 
+        "image": "quay.io/hnhan/ocp-tools:iperf3",
+        "imagePullPolicy": "Always",
+        "env": [
+        ]
+      }
+    ]
+  }
+}

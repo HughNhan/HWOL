@@ -1,0 +1,3 @@
+perf3 -s --format g -p 30002
+iperf3 --format g -c 172.30.227.168 -p 30002 --udp  --get-server-output -V -fm -b2000m -l256 -i1 -t60
+ "iperf3 --format g -c ${SERVER_IP} -p $PORT --tcp  --get-server-output -V -fm -l ${WSIZE} -i1 -t ${DURATION} $OPTS"
