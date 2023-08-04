@@ -1,0 +1,4 @@
+# source this file to use STD_ALONE
+
+STD_ROOT=$(pwd)
+export PATH=$PATH:$STD_ROOT/bin
