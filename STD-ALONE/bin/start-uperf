@@ -1,0 +1,254 @@
+#!/bin/bash
+#
+# Usage: can be run directly or by wrapper "this-run"
+#     ex1: $ SAMPLES=6 NTHREADS=16 DURATION=30 WSIZE=32000 PLACEMENT=$PLACEMENT HWOL=<true/false> ./start-client    <=== Be sure to update ./placement before run
+#     ex2: $ HWOL=>true/false>this-run --label <label>  <=== see run.sh
+#
+
+set -o pipefail
+
+export DURATION=${DURATION:-60}
+export WSIZE=${WSIZE:-32000}
+export RSIZE=${RSIZE:-512}
+export NTHREADS=${NTHREADS:-16}
+export SAMPLES=${SAMPLES:-1}
+export HWOL=${HWOL:-false}
+export OPTS=" -a -p"
+
+CLEAN_ONLY=false
+CLEAN=false
+me_debug=1
+function debug {
+    if [ $me_debug == 1 ]; then
+       echo $@
+    fi
+}
+
+
+# We can run this sript directly, or we can run it with a wrapper like "this-run -> run.sh"
+# the wrapper can choose PLACEMENT.
+if [ -z "${PLACEMENT}" ]; then
+   # source default PLACEMENT.
+   debug source ./placement
+   source ./placement
+else
+   # source PLACEMENT per input  arg
+   debug source $PLACEMENT
+   source $PLACEMENT
+fi
+debug HWOL=$HWOL_SERVERS $HWOL_CLIENTS
+debug NO=  $NO_SERVERS $NO_CLIENTS
+
+CLEAN=false
+
+if [ ! -d ./generated ]; then
+    mkdir ./generated
+fi
+rm -f ./generated/*
+
+function f_help {
+    me=`basename "$0"`
+    echo Usage: $me "[--clean --hwol]"
+}
+
+longopts="clean-only, clean,hwol,help"
+opts=$(getopt -q -o "" --longoptions "$longopts" -n "getopt.sh" -- "$@");
+if [ $? -ne 0 ]; then
+    echo "Unrecognized option specified"
+    exit
+fi
+eval set -- "$opts";
+while true; do
+    case "$1" in
+        --clean)
+            shift;
+            CLEAN=true
+            ;;
+        --clean-only)
+            shift;
+            CLEAN_ONLY=true
+            ;;
+        --hwol)
+            shift;
+            HWOL=true
+            ;;
+        --)
+            shift;
+            break
+            ;;
+        --help)
+            shift;
+            f_help
+            exit
+            ;;
+
+        *)
+            echo "Invalid option: $1"
+            exit
+    esac
+done
+
+if [ "$CLEAN_ONLY" == true ]; then
+    (oc get pod --no-headers | awk '{print $1}' | xargs oc delete pod)
+    exit
+fi
+
+if [ "$CLEAN" == true ]; then
+    (oc get pod --no-headers | awk '{print $1}' | xargs oc delete pod >/dev/null)
+fi
+
+
+#
+# create-pod-spec <1-server-w0> 
+#
+function create-pod-spec {
+    echo create-pod-spec: $1
+    export IDX=$(echo $1 | awk -F "-" '{ print $1}')
+    export ROLE=$(echo $1 | awk -F "-" '{ print$2}')
+    export WORKER=$(echo $1 | awk -F "-" '{ print$3}')
+    export IDX2D=$(echo $IDX | awk '{ printf("%02d", $1)}')
+    debug IDX=$IDX ROLE=$ROLE WORKER=$WORKER
+    envsubst < templates/$ROLE-$WORKER.json.template > ./generated/$IDX-$ROLE-$WORKER.json
+}
+
+function run-pair {
+    if [ "$1" == "help" ]; then
+        echo start-client 1-client-w1  1-server-w0
+        exit
+    fi
+
+    # wait for server pod comes up
+    until [ "$(oc get pod --no-headers  $2 -o wide | awk -F " " '{print $6}')" != "<none>" ]; do
+        sleep 1
+    done
+    
+    # grep "uperf -s -P 30000" to get the port numer, number after -P
+    export PORT=$(grep -e "perf" ./generated/$2.json |  grep -oP '(?<=-P )[^"]*')
+    export DATAPORT=$((PORT+1))
+    debug PORT=$PORT DATAPORT=$DATAPORT
+
+    export SERVER_IP=$(oc get pod --no-headers  $2 -o wide | awk -F " " '{print $6}')
+    #envsubst < $1.json > $1.json
+    create-pod-spec $1
+
+    #delete old client. -r to remove "" arounf name
+    podname=$(cat ./generated/$1.json | jq -r '.metadata.name')
+    if oc get pod $podname &> /dev/null; then
+        oc delete pod $podname 1>/dev/null
+    else
+        echo no $podname
+    fi
+
+    oc apply -f ./generated/$1.json 2>/dev/null
+}
+
+if [ "$HWOL" == true ]; then
+    mode=hwol
+    SERVERS=("${HWOL_SERVERS[@]}")
+    CLIENTS=("${HWOL_CLIENTS[@]}")
+else
+    mode=no-hwol
+    SERVERS=("${NO_SERVERS[@]}")
+    CLIENTS=("${NO_CLIENTS[@]}")
+fi
+
+
+function run-servers {
+  for i in ${!SERVERS[@]}; do
+    # start servers if they are not there
+    create-pod-spec ${SERVERS[$i]}
+    if ! oc get pod  ${SERVERS[$i]} &>/dev/null ; then
+        if ! oc apply -f ./generated/${SERVERS[$i]}.json ; then
+           echo failed to start ./generated/${SERVERS[$i]}.json
+           exit
+        fi
+    fi
+  done
+}
+
+
+function run-clients {
+  for i in ${!SERVERS[@]}; do
+    echo run ${CLIENTS[$i]} "===>" ${SERVERS[$i]}
+    # start peer clients
+    run-pair ${CLIENTS[$i]} ${SERVERS[$i]}
+  done
+}
+
+
+function run-all {
+  for i in ${!SERVERS[@]}; do
+    # start servers if they are not there
+    if ! oc get pod  ${SERVERS[$i]} &>/dev/null ; then
+        if ! oc apply -f ./generated/${SERVERS[$i]}.json ; then
+           echo failed to start ./generated/${SERVERS[$i]}.json
+           exit
+        fi
+    fi
+    echo run ${CLIENTS[$i]} "===>"  ${SERVERS[$i]}
+    # start peer clients
+    run-pair ${CLIENTS[$i]} ${SERVERS[$i]}
+  done
+}
+
+run_state=1
+
+function is-run-complete {
+    for i in ${CLIENTS[@]}; do
+      podname=$(cat ./generated/$i.json | jq -r '.metadata.name')
+      # oc get pod $podname -o json |  jq -r '.status.containerStatuses[].state.terminated' 
+      if [ $(oc get pod $podname -o jsonpath="{.status.phase}") != Succeeded ]; then
+        # this one is not terminated
+        #echo $podname not complete
+        run_state=1
+        return
+      fi
+    done
+    # all terminated
+    run_state=0
+}
+
+function wait-run-complete {
+    count=$DURATION
+    count=$((count+10))
+    echo -n "wait for completion up to $count seconds "
+    #until [ "$(is-run-complete 2>&1)" == "1" ]; do
+    until [ "$run_state" == "0" ]; do
+        is-run-complete 2>&1
+        sleep 1
+        echo -n "."
+        ((count--))
+        if [ $count -le 0 ]; then
+           return;
+        fi
+    done
+}
+
+
+function  get_results {
+    is-run-complete
+    if [ "$run_state" == 0  ] ; then
+        for i in ${CLIENTS[@]}; do
+            podname=$(cat ./generated/$i.json | jq -r '.metadata.name')
+            echo " "
+            echo --- short result of $i:
+            oc logs $podname | tail -n10
+        done
+    fi
+}
+echo mode=$mode, DURATION=${DURATION}, NTHREADS=${NTHREADS}, WSIZE=${WSIZE}, RSIZE=${RSIZE}
+
+for i in $(seq $SAMPLES); do
+   run_state=1
+   echo "<<<<<<" sample-$i ">>>>>>>"
+   run-servers
+   run-clients
+   sleep 10
+   wait-run-complete
+   get_results
+done
+
+echo "Benchmark summary is complete"
+
+
+# EOF

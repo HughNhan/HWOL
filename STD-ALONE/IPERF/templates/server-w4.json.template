@@ -25,7 +25,7 @@
         },
 
         "args": [
-            "iperf3 -s -p 34${IDX}00 --format g"
+            "iperf3 -s -p 34${IDX}0 --format g"
         ],
         "command": [
             "/bin/sh",

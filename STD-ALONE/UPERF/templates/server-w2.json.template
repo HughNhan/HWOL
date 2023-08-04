@@ -13,7 +13,7 @@
     "containers": [
       {
         "args": [
-            "uperf -s -P 32${IDX}00"
+            "uperf -s -P 32${IDX2D}0"
         ],
         "command": [
             "/bin/sh",

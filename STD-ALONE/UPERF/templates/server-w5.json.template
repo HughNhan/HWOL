@@ -25,7 +25,7 @@
         },
 
         "args": [
-            "uperf -s -P 35${IDX}00"
+            "uperf -s -P 35${IDX2D}0"
         ],
         "command": [
             "/bin/sh",

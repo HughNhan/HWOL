@@ -13,7 +13,7 @@
     "containers": [
       {
         "args": [
-            "iperf3 -s -p 33${IDX}00 --format g"
+            "iperf3 -s -p 33${IDX2D}0 --format g"
         ],
         "command": [
             "/bin/sh",

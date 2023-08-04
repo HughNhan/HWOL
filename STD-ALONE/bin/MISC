@@ -1,0 +1,2 @@
+# sum iperf receive tput
+grep "receive" *.log | awk '{print $7}'  | awk 'BEGIN { sum=0 } { sum+=$0 } END { printf("%.2f", sum) }'
