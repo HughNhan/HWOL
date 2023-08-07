@@ -1,0 +1,13 @@
+#!/bin/bash
+export BENCH=uperf
+export DURATION=${DURATION:-60}
+export WSIZE=${WSIZE:-32000}
+export RSIZE=${RSIZE:-512}
+export NTHREADS=${NTHREADS:-16}
+export SAMPLES=${SAMPLES:-1}
+export HWOL=${HWOL:-false}
+export OPTS=" -a -p"
+
+#pull in start-common
+. bench-common
+main

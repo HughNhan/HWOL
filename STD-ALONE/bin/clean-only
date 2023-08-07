@@ -1,0 +1,2 @@
+. bench-common
+main --clean-only

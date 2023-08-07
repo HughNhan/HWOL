@@ -1,0 +1,19 @@
+#!/bin/bash
+export DURATION=${DURATION:-60}
+export WSIZE=${WSIZE:-32000}
+export RSIZE=${RSIZE:-512}
+export NTHREADS=${NTHREADS:-16}
+export SAMPLES=${SAMPLES:-1}
+export HWOL=${HWOL:-false}
+export OPTS=""
+TCP=
+UDP="--udp"
+export PROTO=$TCP      
+
+export BENCH=iperf
+#pull in start-common
+. bench-common
+# invoke main to kick-off
+main
+
+# All Done
