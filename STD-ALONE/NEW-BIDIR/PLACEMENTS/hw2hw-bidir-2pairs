@@ -1,7 +1,0 @@
-export HWOL_SERVERS=(1-server-w0 2-server-w5)
-export HWOL_CLIENTS=(1-client-w4 2-client-w0)
-
-# normal
-export NO_SERVERS=(1-server-w1 2-server-w5)
-export NO_CLIENTS=(1-client-w2 2-client-w1)
-
