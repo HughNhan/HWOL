@@ -1,0 +1,8 @@
+This dir is for testing Qos: guaranteed, burstable and bestffort
+
+Usage: this-run --label <xxx>
+
+Prerequisite:  choose QoS class 
+    ex: for BE
+        cd templates
+        ln -s BE/* .

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Install PAO via NTO since we are > 4.10
-# Assumption: there exists mcp mcp-offloading. So we will add MC performace-profile in to the exiting MCP mcp-offloading
+# Assumption: there exists mcp mcp-offloading. So we will add MC performace-profile in to the existing MCP mcp-offloading
 #
 
 set -euo pipefail
@@ -52,7 +52,7 @@ fi
 
 echo "apply ${MANIFEST_DIR}/performance_profile.yaml: done"
 
-# label node with "pao" for visual identification. No function;
+# label node with "pao" for visual identification. No functional effects;
 for worker in $WORKER_LIST; do
    oc label --overwrite node ${worker} node-role.kubernetes.io/pao=""
 done

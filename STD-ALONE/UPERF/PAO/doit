@@ -1,0 +1,13 @@
+QOS="BURST BE GUARANTEED"
+
+for qos in $QOS; do
+  clean-only
+    pushd templates >/dev/null
+    rm -f *.template
+    ln -s $qos/*.template .
+    popd >/dev/null
+    this-run --label NO-HWOL-$qos 
+   clean-only
+    HWOL=true this-run --label HWOL-$qos 
+done
+    

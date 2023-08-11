@@ -1,0 +1,5 @@
+1. choose QOS
+    ex: for BE
+        cd templates
+        ln -s BE/*
+2. HWOL=true/false this-run --label <>

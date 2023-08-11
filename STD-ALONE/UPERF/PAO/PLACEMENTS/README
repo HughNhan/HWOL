@@ -1,0 +1,9 @@
+Old topology:
+             
+
+              W0 (HWOL)
+           /             \
+    W3(no)               W4(no)
+           \            /
+               W1 (no)
+
