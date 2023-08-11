@@ -1,1 +1,3 @@
-This is to install/cleanup 4.13 PAO (which is now merged into NTO (Node Tuning Operator)
+This is to install/cleanup 4.13 PAO (which is now merged into NTO (Node Tuning Operator). More details:
+    + this dir means for the non-HWOL nodes
+    + there is a subdir ./HWOL-PAO meant for the current HWOL nodes.  That is there exists mcp mcp-offloading.

@@ -55,7 +55,7 @@ get_mcp_progress_status () {
     if [[ "${SNO}" == "true" ]]; then
       local status=$(oc get mcp master -o json | jq -r '.status.conditions[] | select(.type == "Updating") | .status')
     else
-      local status=$(oc get mcp $this_mcp -o json | jq -r '.status.conditions[] | select(.type == "Updating") | .status')
+      local status=$(oc get mcp ${this_mcp} -o json | jq -r '.status.conditions[] | select(.type == "Updating") | .status')
     fi
     echo ${status}
 }
@@ -71,7 +71,7 @@ wait_mcp () {
         count=$((count-10))
     done
 
-    local status=$(get_mcp_progress_status)
+    local status=$(get_mcp_progress_status $this_mcp)
     count=300
     printf "\npolling 3000 sec for mcp complete, May lose API connection if SNO, during node reboot"
     while [[ $status != "False" ]]; do

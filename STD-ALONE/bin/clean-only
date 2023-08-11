@@ -1,2 +1,4 @@
+# Usage: call <me> to remove all std pods
+
 . bench-common
 main --clean-only

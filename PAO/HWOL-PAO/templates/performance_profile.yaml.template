@@ -16,5 +16,5 @@ spec:
   nodeSelector:
     node-role.kubernetes.io/${MCP}: "" 
   machineConfigPoolSelector:
-   machineconfiguration.openshift.io/role: ${MCP}
+       machineconfiguration.openshift.io/role: ${MCP}
 

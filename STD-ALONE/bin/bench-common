@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Usage: can be run directly or by wrapper "this-run"
-#     ex1: $ SAMPLES=6 NTHREADS=16 DURATION=30 WSIZE=32000 PLACEMENT=$PLACEMENT HWOL=<true/false> ./start-client    <=== Be sure to update ./placement before run
-#     ex2: $ HWOL=>true/false>this-run --label <label>  <=== see run.sh
+# Usage: you can invoke this, but should run uperf-start or iperf-start wrappers
+#
+#  ex1: $ SAMPLES=6 NTHREADS=16 DURATION=30 WSIZE=32000 PLACEMENT=$PLACEMENT HWOL=<true/false> ./iperf-start
 #
 
 set -o pipefail
@@ -15,7 +15,7 @@ set -o pipefail
 #export SAMPLES=${SAMPLES:-1}
 #export HWOL=${HWOL:-false}
 #export OPTS=" -a -p"
-me_debug=1
+me_debug=0
 
 # COMMON START
 

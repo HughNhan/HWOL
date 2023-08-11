@@ -1,9 +1,8 @@
 #!/bin/sh
 
-# Install PAO and performanceprofile for SNO or regular cluster
+# Install PAO via NTO since we are > 4.10
+# Assumption: there exists mcp mcp-offloading. So we will add MC performace-profile in to the exiting MCP mcp-offloading
 #
-# Note::
-#    - for non-SNO: hardcode 2 CPUs for housekeeping workloads.
 
 set -euo pipefail
 source ./setting.env
@@ -12,25 +11,17 @@ export WORKER_LIST=${WORKER_LIST:-}
 
 parse_args $@
 
-# step 1 - label workers
-for worker in $WORKER_LIST; do
-   oc label --overwrite node ${worker} node-role.kubernetes.io/${MCP}=""
-done
-
-# step 2 - create a new MCP
-if ! oc get mcp $MCP 2>/dev/null; then
-    echo "create mcp for $MCP ..."
-    mkdir -p ${MANIFEST_DIR}
-    envsubst < templates/mcp-worker-cnf.yaml.template > ${MANIFEST_DIR}/mcp-${MCP}.yaml
-    oc create -f ${MANIFEST_DIR}/mcp-${MCP}.yaml
-    echo "create mcp for ${MCP}: done"
+# step 1 - label MCP mcp-offloading
+if oc get mcp ${MCP} ; then
+    oc label --overwrite mcp ${MCP} machineconfiguration.openshift.io/role=${MCP}
+else
+   echo "No mcp ${MCP} represent. Perhaps you should install HWOL first"
+   exit
 fi
 
 mkdir -p ${MANIFEST_DIR}/
 
-##### Step 3 - SKIP install PAO since version > 4.10 
-
-###### Step 4 - generate performance profile and install ######
+###### Step 3 - generate performance profile and install ######
 echo "Acquiring cpu info from first worker node in ${WORKER_LIST} ..."
 FIRST_WORKER=$(echo ${WORKER_LIST} * | head -n1 | awk '{print $1;}')
 all_cpus=$(exec_over_ssh ${FIRST_WORKER} lscpu | awk '/On-line CPU/{print $NF;}')
@@ -55,11 +46,16 @@ echo "generating ${MANIFEST_DIR}/performance_profile.yaml: done"
 echo "apply ${MANIFEST_DIR}/performance_profile.yaml ..."
 oc apply -f ${MANIFEST_DIR}/performance_profile.yaml
 
-sleep 10
-
 if [[ "${WAIT_MCP}" == "true" ]]; then
     wait_mcp ${MCP}
 fi
 
 echo "apply ${MANIFEST_DIR}/performance_profile.yaml: done"
+
+# label node with "pao" for visual identification. No function;
+for worker in $WORKER_LIST; do
+   oc label --overwrite node ${worker} node-role.kubernetes.io/pao=""
+done
+
+
 #EOF
