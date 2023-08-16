@@ -1,1 +1,17 @@
 This dir contains tools for running HWOL in standalone mode (as opposed to crucible mbench)
+./bin IPERF, UPERF are current. The other are old artifacts
+PAO is under UPERF or IPERF
+
+.
+├── BIDIR
+├── bin
+├── EXP
+├── GUARANTEED
+├── IPERF
+├── PAO
+├── QOS
+├── README
+├── setup.rc
+└── UPERF
+
+

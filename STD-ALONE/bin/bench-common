@@ -167,7 +167,7 @@ function get_results {
             echo --- short result of $i:
             #oc logs $podname  | tail -n10
             #capture pod'logs to a file and display last 10 lines to stdout.
-            echo oc logs $podname | tee ${podname}.txt
+            #echo oc logs $podname | tee ${podname}.txt
             oc logs $podname | tee ./${log_dir}/${podname}.txt | tail -n10
         done
     fi
