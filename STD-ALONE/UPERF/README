@@ -6,12 +6,12 @@ this dir contain UPERF w/o PAO workload, and UPERF with PAO (subdir .PAO)
 # Usage:  HWOL=true/falsethis-run --label "xxx"            # Note: before the invocation, prepare PLACEMENT in run.sh
 #
 
-Calling chain: this-run -> run.sh  -> start-client
+Calling chain: this-run -> run.sh  -> uperf-start
 
 I can invoke at any level with additional conveneince.
 
 1. start-client: need  manual inputs: PLACEMENT and HWOL
-   $ SAMPLES=6 NTHREADS=16 DURATION=30 WSIZE=32000 PLACEMENT=$PLACEMENT HWOL=<true/false> ./start-client  
+   $ SAMPLES=6 NTHREADS=16 DURATION=30 WSIZE=32000 PLACEMENT=$PLACEMENT HWOL=<true/false> ./uperf-start
 
 2. run.sh:      manual editing run.sh with PLACEMENT
    $ HWOL=<true/false>  run.sh
