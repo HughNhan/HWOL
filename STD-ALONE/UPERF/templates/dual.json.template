@@ -27,7 +27,34 @@
             "value": "0"
           }
         ]
+      },
+
+      {
+        "args": [
+            "uperf -s -P 30${IDX2D}0"
+        ],
+        "command": [
+            "/bin/sh",
+            "-c"
+        ],
+        "name": "server-2",
+        "image": "quay.io/hnhan/ocp-tools:uperf",
+        "imagePullPolicy": "Always",
+        "securityContext": {
+           "privileged": true
+        },
+        "env": [
+          {
+            "name": "cpu_partitioning",
+            "value": "0"
+          }
+        ]
       }
+
+
+
+
+
     ]
   }
 }
