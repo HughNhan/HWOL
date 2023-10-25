@@ -1,0 +1,7 @@
+export HWOL_SERVERS=(1-server-any)
+export HWOL_CLIENTS=(1-client-any)
+
+# normal
+export NO_SERVERS=(1-server-any)
+export NO_CLIENTS=(1-client-any)
+
